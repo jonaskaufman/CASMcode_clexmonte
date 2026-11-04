@@ -708,8 +708,9 @@ void KineticCalculator::_reset() {
           std::move(selected_event_data_subparser->value);
     }
   }
-  log.indent() << "selected_event_data=" << qto_json(this->selected_event_function_params)
-               << std::endl;
+  // TODO: Need to_json function for SelectedEventFunctionParams
+  //log.indent() << "selected_event_data=" << qto_json(this->selected_event_function_params)
+  //             << std::endl;
 
   // Read "event_data_type"
   // - "high_memory": complete event list,
