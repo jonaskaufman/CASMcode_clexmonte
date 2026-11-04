@@ -12,6 +12,7 @@
 #include "casm/clexmonte/monte_calculator/sampling_functions.hh"
 #include "casm/clexmonte/monte_calculator/selected_event_functions.hh"
 #include "casm/clexmonte/run/functions.hh"
+#include "casm/clexmonte/misc/parse_array.hh"
 #include "casm/configuration/io/json/Configuration_json_io.hh"
 #include "casm/misc/TypeInfo.hh"
 #include "casm/monte/events/OccEventProposal.hh"
@@ -84,7 +85,7 @@ KineticCalculator::KineticCalculator()
           {"verbosity", "print_event_data_summary", "mol_composition_tol",
            "event_data_type", "event_selector_type", "abnormal_event_handling",
            "impact_table_type", "assign_allowed_events_only",
-           "selected_event_data"},  // optional_params,
+           "selected_event_data", "event_filters"},  // optional_params,
           true,                     // time_sampling_allowed,
           true,                     // update_atoms,
           false,                    // save_atom_info,
@@ -685,8 +686,14 @@ void KineticCalculator::_reset() {
 
   // TODO: enumeration
 
-  // TODO: Read event_filters from params
-  this->event_filters = std::nullopt;
+  // Read event_filters from params
+  if (parser.self.contains("event_filters")) {
+    auto event_filters_subparser = parser.subparse_with<std::vector<EventFilterGroup>>(
+        parse_array<EventFilterGroup>, "event_filters");
+    if (event_filters_subparser->valid()) {
+      this->event_filters = std::move(*event_filters_subparser->value);
+    }
+  }
   log.indent() << "event_filters=" << qto_json(this->event_filters)
                << std::endl;
 
@@ -701,7 +708,7 @@ void KineticCalculator::_reset() {
           std::move(selected_event_data_subparser->value);
     }
   }
-  log.indent() << "selected_event_data=" << qto_json(this->event_filters)
+  log.indent() << "selected_event_data=" << qto_json(this->selected_event_function_params)
                << std::endl;
 
   // Read "event_data_type"

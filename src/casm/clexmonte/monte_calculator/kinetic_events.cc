@@ -240,6 +240,18 @@ void CompleteKineticEventData<DebugMode>::update(
     event_list = clexmonte::make_complete_event_list(
         prim_event_list, prim_impact_info_list, occ_location, event_filters);
 
+    // Prune impact tables to remove events not in event_list due to filters
+    // TODO: Move this inside make_complete_event_list?
+    for (auto& [event_id, impacts]: event_list.impact_table) {
+      std::vector<EventID> pruned_impacts;
+      for (auto& impacted_event_id : impacts) {
+          if (event_list.events.count(impacted_event_id)) {
+            pruned_impacts.push_back(impacted_event_id);
+          }
+        }
+      impacts = pruned_impacts;
+    }
+
     // Reset "not normal" event counters
     n_encountered_abnormal.clear();
     n_selected_abnormal.clear();
@@ -267,14 +279,20 @@ void CompleteKineticEventData<DebugMode>::update(
     transformation_matrix_to_super = get_transformation_matrix_to_super(state);
   }
 
-  Index n_unitcells = transformation_matrix_to_super.determinant();
+  // Index n_unitcells = transformation_matrix_to_super.determinant();
+
+  std::vector<EventID> complete_event_id_list;
+    for (auto& [event_id, event_data]: event_list.events) {
+      complete_event_id_list.push_back(event_id);
+    }
 
   // Make event selector
   // - This calculates all rates at construction
   event_selector =
       std::make_shared<CompleteKineticEventData::event_selector_type>(
           event_calculator,
-          clexmonte::make_complete_event_id_list(n_unitcells, prim_event_list),
+          // clexmonte::make_complete_event_id_list(n_unitcells, prim_event_list),
+          complete_event_id_list,
           event_list.impact_table,
           std::make_shared<lotto::RandomGeneratorT<engine_type>>(engine));
 }
